@@ -116,6 +116,10 @@ const userSchema = new mongoose.Schema(
         resetPasswordExpire: {
             type: Date,
         },
+        resetPasswordVerified: {
+            type: Boolean,
+            default: false,
+        },
 
         // ──────────────── Activity Tracking ────────────────
         lastLogin: {

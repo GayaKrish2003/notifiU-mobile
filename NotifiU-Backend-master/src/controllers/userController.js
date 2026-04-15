@@ -14,7 +14,7 @@ const ExcelJS = require('exceljs');
  */
 const generateAccessToken = (id, role) => {
     return jwt.sign({ id, role }, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '7d',
+        expiresIn: '15m',
     });
 };
 
@@ -124,7 +124,6 @@ const registerStudent = async (req, res) => {
                 role: user.role,
                 accountStatus: user.accountStatus,
                 accessToken,
-                refreshToken,
             });
         }
     } catch (error) {
@@ -196,7 +195,6 @@ const registerLecturer = async (req, res) => {
                 role: user.role,
                 accountStatus: user.accountStatus,
                 accessToken,
-                refreshToken,
             });
         }
     } catch (error) {
@@ -270,7 +268,6 @@ const registerJobProvider = async (req, res) => {
                 role: user.role,
                 accountStatus: user.accountStatus,
                 accessToken,
-                refreshToken,
             });
         }
     } catch (error) {
@@ -337,7 +334,6 @@ const loginUser = async (req, res) => {
                 faculty: user.faculty,
                 academicYear: user.academicYear,
                 accessToken,
-                refreshToken,
             });
         } else {
             res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -398,7 +394,6 @@ const loginStudent = async (req, res) => {
                 faculty: user.faculty,
                 academicYear: user.academicYear,
                 accessToken,
-                refreshToken,
             });
         } else {
             res.status(401).json({ success: false, message: 'Invalid email, password or role' });
@@ -457,7 +452,6 @@ const loginLecturer = async (req, res) => {
                 phonenumber: user.phonenumber,
                 department: user.department,
                 accessToken,
-                refreshToken,
             });
         } else {
             res.status(401).json({ success: false, message: 'Invalid email, password or role' });
@@ -510,7 +504,6 @@ const loginJobProvider = async (req, res) => {
                 role: user.role,
                 accountStatus: user.accountStatus,
                 accessToken,
-                refreshToken,
             });
         } else {
             res.status(401).json({ success: false, message: 'Invalid email, password or role' });

@@ -72,7 +72,6 @@ const announcementSchema = new mongoose.Schema(
 
 announcementSchema.index({ status: 1, publish_date: -1 });
 announcementSchema.index({ module_id: 1, status: 1 });
-announcementSchema.index({ posted_by: 1 });
 
 const Announcement = mongoose.model('Announcement', announcementSchema);
 

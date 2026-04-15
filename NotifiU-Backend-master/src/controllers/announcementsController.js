@@ -1,6 +1,8 @@
 const Announcement = require('../models/announcement');
+const fs = require('fs');
+const path = require('path');
 
-function getAnnouncements(req, res) {
+async function getAnnouncements(req, res) {
     try {
         const { module_id, status, priority } = req.query;
         const filter = {};
@@ -8,10 +10,8 @@ function getAnnouncements(req, res) {
         if (status) filter.status = status;
         if (priority) filter.priority = priority;
 
-        Announcement.find(filter)
-            .sort({ publish_date: -1 })
-            .then(announcements => res.status(200).json(announcements))
-            .catch(err => res.status(500).json({ error: 'Failed to fetch announcements' }));
+        const announcements = await Announcement.find(filter).sort({ publish_date: -1 });
+        res.status(200).json(announcements);
     } catch (err) {
         console.error('Error fetching announcements:', err);
         res.status(500).json({ error: 'An error occurred while fetching announcements' });
@@ -82,39 +82,67 @@ async function updateAnnouncement(req, res) {
 
 async function deleteAnnouncement(req, res) {
     try {
-        const deleted = await Announcement.findByIdAndDelete(req.params.id);
-        if (!deleted) {
+        const announcement = await Announcement.findById(req.params.id);
+        if (!announcement) {
             return res.status(404).json({ error: 'Announcement not found' });
         }
-        res.status(200).json({ message: 'Announcement deleted successfully' });
+
+        // Delete associated files from disk
+        if (announcement.attachments && announcement.attachments.length > 0) {
+            for (const att of announcement.attachments) {
+                const fileName = path.basename(att.file_path);
+                const fullPath = path.join(__dirname, '..', 'uploads', 'announcements', fileName);
+                if (fs.existsSync(fullPath)) {
+                    fs.unlinkSync(fullPath);
+                }
+            }
+        }
+
+        await Announcement.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: 'Announcement and associated files deleted successfully' });
     } catch (err) {
         console.error('Error deleting announcement:', err);
         res.status(500).json({ error: 'An error occurred while deleting the announcement' });
     }
 }
 
-function deleteAnnouncementAttachment(req, res) {
+async function deleteAnnouncementAttachment(req, res) {
     try {
         const { id, attachmentId } = req.params;
-        Announcement.findById(id)
-            .then(announcement => {
-                if (!announcement) {
-                    return res.status(404).json({ error: 'Announcement not found' });
-                }
-                const attachmentIndex = announcement.attachments.findIndex(att => att._id.toString() === attachmentId);
-                if (attachmentIndex === -1) {
-                    return res.status(404).json({ error: 'Attachment not found' });
-                }
-                announcement.attachments.splice(attachmentIndex, 1);
-                return announcement.save();
-            })
-            .then(updatedAnnouncement => res.status(200).json(updatedAnnouncement))
-            .catch(err => res.status(500).json({ error: 'Failed to delete announcement attachment', details: err }));
+        const announcement = await Announcement.findById(id);
+
+        if (!announcement) {
+            return res.status(404).json({ error: 'Announcement not found' });
+        }
+
+        const attachmentIndex = announcement.attachments.findIndex(att => att._id.toString() === attachmentId);
+        if (attachmentIndex === -1) {
+            return res.status(404).json({ error: 'Attachment not found' });
+        }
+
+        const attachment = announcement.attachments[attachmentIndex];
+        
+        // Physically delete the file from disk
+        try {
+            const fileName = path.basename(attachment.file_path);
+            const fullPath = path.join(__dirname, '..', 'uploads', 'announcements', fileName);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath);
+            }
+        } catch (fileErr) {
+            console.error('Error deleting physical file:', fileErr);
+            // We continue anyway so the DB record is removed even if file deletion fails
+        }
+
+        announcement.attachments.splice(attachmentIndex, 1);
+        const updatedAnnouncement = await announcement.save();
+        res.status(200).json(updatedAnnouncement);
     } catch (err) {
         console.error('Error deleting announcement attachment:', err);
         res.status(500).json({ error: 'An error occurred while deleting the announcement attachment' });
     }
 }
+
 
 module.exports = {
     getAnnouncements,

@@ -62,7 +62,7 @@ app.use('/api', chatRouter);
 
 // Root Endpoint
 app.get('/', (req, res) => {
-    res.send('UniStay API is Running...');
+    res.send('NotifiU API is Running...');
 });
 
 // 6. Error Handling (Must be after routes)

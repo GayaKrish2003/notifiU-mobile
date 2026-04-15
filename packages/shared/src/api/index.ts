@@ -1,5 +1,5 @@
-import axios from "axios";
-import { getToken } from "../utils/tokenStorage";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { getToken, setToken, removeToken } from "../utils/tokenStorage";
 
 
 export interface ChatMessage {
@@ -15,10 +15,15 @@ export const BASE_URL =
   (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) ||
   "http://localhost:5005/api";
 
+/** Returns the server root URL without the /api suffix */
+export const getServerURL = () => BASE_URL.replace(/\/api\/?$/, "");
+
 const api = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true, // Important for refresh token cookie
 });
 
+// Avoid circular imports or issues with the singleton by fetching token on each request
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) {
@@ -26,6 +31,69 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// ─── Token Refresh Logic ──────────────────────────────────────
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+const subscribeTokenRefresh = (cb: (token: string) => void) => {
+  refreshSubscribers.push(cb);
+};
+
+const onTokenRefreshed = (token: string) => {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+};
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const { config, response } = error;
+    const originalRequest = config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    // If 401 and not already retrying
+    if (response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Don't refresh if the error is from the login or refresh endpoint itself
+      const url = originalRequest.url || "";
+      if (url.includes("/login") || url.includes("/refresh")) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Attempt to get a new access token using the refresh token cookie
+        const res = await axios.get(`${BASE_URL}/users/refresh`, { withCredentials: true });
+        const { accessToken } = res.data;
+
+        if (accessToken) {
+          await setToken(accessToken);
+          onTokenRefreshed(accessToken);
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // Refresh failed (e.g. refresh token expired or missing)
+        await removeToken();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export const sendChatMessage = (messages: ChatMessage[]) =>
   api.post("/chat", { messages });
@@ -46,7 +114,7 @@ export const updateLecturerProfile = (data: Payload) => api.put("/lecturer/profi
 export const getAllUsers = () => api.get("/users");
 export const getUserById = (id: string) => api.get(`/users/${id}`);
 export const updateUserByAdmin = (id: string, data: Payload) =>
-  api.patch(`/users/${id}`, data);
+  api.put(`/users/${id}`, data);
 export const updateAccountStatus = (id: string, status: string) =>
   api.patch(`/users/${id}/status`, { accountStatus: status });
 export const deleteUser = (id: string) => api.delete(`/users/${id}`);
@@ -54,8 +122,8 @@ export const exportUsersCSV = () =>
   api.get("/users/export/csv", { responseType: "blob" });
 export const exportUsersExcel = () =>
   api.get("/users/export/excel", { responseType: "blob" });
-export const getUserActivity = (id?: string) =>
-  api.get(id ? `/users/${id}/activity` : "/users/activity");
+export const getUserActivity = (id: string) =>
+  api.get(`/users/${id}/activity`);
 
 // ─── Auth ─────────────────────────────────────────────────────
 export const forgotPassword = (data: Payload) =>
@@ -89,4 +157,4 @@ export const deleteAnnouncementAttachment = (id: string, attachmentId: string) =
   api.delete(`/announcements/${id}/attachments/${attachmentId}`);
 
 
-export default api;
+export default api;

@@ -72,9 +72,9 @@ router.get('/profile', protect, getUserProfile);
 router.get('/profile/:id', protect, getUserProfileById);
 router.get('/details/:id', protect, getUserById);
 router.put('/profile', protect, updateUserProfile);
-router.put('/profile/:id', protect, updateProfile);
 router.put('/profile/image', protect, upload.single('profileImage'), uploadProfileImage);
 router.put('/profile/password', protect, changePassword);
+router.put('/profile/:id', protect, updateProfile);
 router.get('/profile/completion', protect, getProfileCompletion);
 
 // ═══════════════════════════════════════════════════════════════
@@ -99,61 +99,5 @@ router.patch('/:id/payment-status', protect, authorize(['superadmin']), updatePa
 router.get('/:id/activity', protect, authorize(['superadmin']), getUserActivity);
 router.delete('/:id/soft', protect, authorize(['superadmin']), softDeleteUser);
 router.delete('/:id', protect, authorize(['superadmin']), deleteUser);
-
-// ═══════════════════════════════════════════════════════════════
-//  RBAC TEST ROUTES
-// ═══════════════════════════════════════════════════════════════
-
-// Student Only
-router.get(
-    '/student-data',
-    protect,
-    authorize(['student']),
-    (req, res) => {
-        res.json({
-            success: true,
-            data: '🎓 Sensitive student academic and boarding data accessed.',
-        });
-    }
-);
-
-// Lecturer Only
-router.get(
-    '/lecturer-data',
-    protect,
-    authorize(['lecturer']),
-    (req, res) => {
-        res.json({
-            success: true,
-            data: '📚 Lecturer academic dashboard data accessed.',
-        });
-    }
-);
-
-// Job Provider Only
-router.get(
-    '/jobprovider-data',
-    protect,
-    authorize(['jobprovider']),
-    (req, res) => {
-        res.json({
-            success: true,
-            data: '💼 Job provider dashboard data accessed.',
-        });
-    }
-);
-
-// Superadmin Only
-router.get(
-    '/superadmin-dashboard',
-    protect,
-    authorize(['superadmin']),
-    (req, res) => {
-        res.json({
-            success: true,
-            data: '👑 Central management dashboard access granted. Welcome, Super Admin.',
-        });
-    }
-);
 
 module.exports = router;
