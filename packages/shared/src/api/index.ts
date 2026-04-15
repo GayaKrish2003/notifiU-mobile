@@ -1,6 +1,7 @@
 import axios from "axios";
 import { getToken } from "../utils/tokenStorage";
 
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -9,19 +10,13 @@ export interface ChatMessage {
 type Payload = Record<string, unknown>;
 type ApiData = Payload | FormData;
 
-// Default fallback — overridden at app startup via initApi()
-let _baseURL = "http://localhost:5005/api";
-
-export const initApi = (config: { baseURL: string }) => {
-  _baseURL = config.baseURL;
-  api.defaults.baseURL = config.baseURL;
-};
-
-/** Returns the server root URL (strips /api suffix) for file downloads */
-export const getServerURL = () => _baseURL.replace(/\/api\/?$/, "");
+export const BASE_URL =
+  // Expo injects EXPO_PUBLIC_* vars at build-time for React Native
+  (typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL) ||
+  "http://localhost:5005/api";
 
 const api = axios.create({
-  baseURL: _baseURL,
+  baseURL: BASE_URL,
 });
 
 api.interceptors.request.use(async (config) => {
@@ -92,5 +87,6 @@ export const deleteAnnouncement = (id: string) =>
   api.delete(`/announcements/${id}`);
 export const deleteAnnouncementAttachment = (id: string, attachmentId: string) =>
   api.delete(`/announcements/${id}/attachments/${attachmentId}`);
+
 
 export default api;

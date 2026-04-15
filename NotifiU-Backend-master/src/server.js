@@ -27,13 +27,19 @@ app.use(
     'http://localhost:8083',
     'http://localhost:8084',
     'http://192.168.8.168:8082',
+    'http://172.20.10.2:8085',  // Current phone port
+    'http://172.20.10.2:5005',
+    'http://172.20.10.2:8081',
     /\.exp\.direct$/,  // allows Expo tunnel URLs
 ],
         credentials: true,
     })
 );
 // 2. Security & Parsing Middleware
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({ 
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false, // Allow cross-origin images/files
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());

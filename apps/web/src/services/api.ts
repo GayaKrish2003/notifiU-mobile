@@ -9,7 +9,7 @@ type Payload = Record<string, unknown>;
 type ApiData = Payload | FormData;
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5005/api",
+  baseURL: "http://localhost:5005/api",
 });
 
 const sanitizeToken = (value: string): string => {
