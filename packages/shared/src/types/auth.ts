@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'student' | 'lecturer' | 'jobprovider';
+export type UserRole = 'superadmin' | 'student' | 'lecturer' | 'jobprovider' | 'clubpresident';
 
 export interface User {
   id: string;
@@ -37,5 +37,53 @@ export interface JobPost {
   file_path:     string;
   original_name: string;
   size_bytes:    number;
+  url:           string;
 } | null;
+}
+
+
+// ── Event types ────────────────────────────────────────────────
+export interface RsvpEntry {
+  name?:          string;
+  studentId:      string;
+  contactNumber:  string;
+  rsvpTime?:      string;
+}
+
+export interface AttendanceEntry {
+  studentId: string;
+  markedAt?: string;
+}
+
+export interface Event {
+  _id:            string;
+  title:          string;
+  description:    string;
+  date:           string;
+  time:           string;
+  location:       string;
+  organizingClub: string;
+  category:       'Workshop' | 'Seminar' | 'Club Activity' | 'Sports' | 'Musical';
+  type:           'Event' | 'Workshop';
+  priority:       'Normal' | 'Urgent';
+  seatLimit:      number;
+  posterImage:    string | null;
+  posterImageKey: string | null;
+  creatorRole:    'superadmin' | 'clubpresident' | 'lecturer';
+  createdBy:      string;
+  status:         'Upcoming' | 'History';
+  startTime:      string;
+  endTime:        string;
+  rsvpList:       RsvpEntry[];
+  attendanceList: AttendanceEntry[];
+  createdAt:      string;
+  updatedAt:      string;
+}
+
+export interface EventNotification {
+  eventId:      string;
+  title:        string;
+  message:      string;
+  type:         'reminder' | 'attendance';
+  hasAttended?: boolean;
 }

@@ -196,4 +196,50 @@ export const downloadJobAttachment = (id: string) =>
   api.get(`/jobs/${id}/attachment`, { responseType: "blob" });
 
 
+// ─── Events ────────────────────────────────────────────────────
+
+// All roles — browse events
+export const getEvents = (params?: Record<string, string>) =>
+  api.get('/events', { params });
+
+// All roles — single event
+export const getEventById = (id: string) =>
+  api.get(`/events/${id}`);
+
+// Student — RSVP
+export const rsvpEvent = (id: string, data: {
+  name: string;
+  studentId: string;
+  contactNumber: string;
+}) => api.post(`/events/${id}/rsvp`, data);
+
+// Student — mark attendance
+export const markAttendance = (id: string, data: { studentId: string }) =>
+  api.post(`/events/${id}/attendance`, data);
+
+// Student — notifications
+export const getEventNotifications = (studentId: string) =>
+  api.get('/events/user/notifications', { params: { studentId } });
+
+// Admin + Club President — create event (multipart FormData)
+export const createEvent = (formData: FormData) =>
+  api.post('/events', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+// Admin + Club President — update event (multipart FormData)
+export const updateEvent = (id: string, formData: FormData) =>
+  api.put(`/events/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+// Admin + Club President — delete event
+export const deleteEvent = (id: string) =>
+  api.delete(`/events/${id}`);
+
+// Admin + Club President — their own events
+export const getMyEvents = (params?: Record<string, string>) =>
+  api.get('/events/my', { params });
+
+
 export default api;

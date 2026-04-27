@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema(
         // ──────────────── Role & Access ────────────────
         role: {
             type: String,
-            enum: ['superadmin', 'student', 'lecturer', 'jobprovider'],
+            enum: ['superadmin', 'student', 'lecturer', 'jobprovider', 'clubpresident'],
             default: 'student',
         },
         accountStatus: {

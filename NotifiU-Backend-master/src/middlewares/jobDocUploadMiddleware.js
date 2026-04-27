@@ -1,28 +1,11 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-// Ensure the jobdocs upload directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads', 'jobdocs');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        // Format: job_timestamp_random.pdf
-        const filename = `job_${Date.now()}_${Math.round(Math.random() * 1e6)}${path.extname(file.originalname)}`;
-        cb(null, filename);
-    },
-});
+// Store file in memory (buffer) so we can upload it to R2
+const storage = multer.memoryStorage();
 
 // Only accept PDF files
 const fileFilter = (req, file, cb) => {
-    const isPdf = path.extname(file.originalname).toLowerCase() === '.pdf'
-        && file.mimetype === 'application/pdf';
+    const isPdf = file.mimetype === 'application/pdf';
     if (isPdf) {
         cb(null, true);
     } else {

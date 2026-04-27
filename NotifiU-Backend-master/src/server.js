@@ -15,6 +15,7 @@ const ticketsRouter = require('./routes/ticketsRoutes');
 const chatRouter = require('./routes/chatRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const jobPostRoutes = require('./routes/jobPostRoutes');
+const eventRoutes = require('./routes/eventRoutes');
 
 // Initialize Express
 const app = express();
@@ -63,6 +64,8 @@ app.use('/api', announcementsRouter);
 app.use('/api', ticketsRouter);
 app.use('/api', chatRouter);
 app.use('/api/jobs', jobPostRoutes);
+app.use('/api/events', eventRoutes);
+
 
 // Root Endpoint
 app.get('/', (req, res) => {

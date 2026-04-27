@@ -935,7 +935,7 @@ const adminCreateUser = async (req, res) => {
         } = req.body;
 
         // Validate role
-        if (!['student', 'lecturer', 'jobprovider', 'superadmin'].includes(role)) {
+        if (!['student', 'lecturer', 'jobprovider', 'superadmin', 'clubpresident'].includes(role)) {
             return res.status(400).json({ success: false, message: 'Invalid role specified' });
         }
 
@@ -1011,7 +1011,7 @@ const updateUserRole = async (req, res) => {
         const { role } = req.body;
         const { id } = req.params;
 
-        if (!['superadmin', 'student', 'lecturer', 'jobprovider'].includes(role)) {
+        if (!['superadmin', 'student', 'lecturer', 'jobprovider', 'clubpresident'].includes(role)) {
             return res.status(400).json({ success: false, message: 'Invalid role' });
         }
 

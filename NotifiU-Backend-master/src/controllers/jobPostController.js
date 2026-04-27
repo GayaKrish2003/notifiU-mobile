@@ -1,6 +1,20 @@
 const JobPost = require('../models/jobPost');
 const fs = require('fs');
 const path = require('path');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+
+// R2 client — same config as moduleController
+const r2 = new S3Client({
+    region: 'auto',
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+        accessKeyId:     process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+});
+
+const buildJobDocUrl = (key) =>
+    `${process.env.R2_PUBLIC_URL.replace(/\/+$/, '')}/${key}`;
 
 // @desc    Create a new job post
 // @route   POST /api/jobs
@@ -23,11 +37,26 @@ const createJobPost = async (req, res) => {
         // req.user is set by the protect middleware automatically
         // It contains the logged-in user's data including their _id
         // Build attachment object if a file was uploaded
-        const attachment = req.file ? {
-            file_path:     `/uploads/jobdocs/${req.file.filename}`,
-            original_name: req.file.originalname,
-            size_bytes:    req.file.size,
-        } : null;
+        // Upload to R2 if a file was provided
+let attachment = null;
+if (req.file) {
+    const ext = path.extname(req.file.originalname);
+    const key = `jobdocs/${Date.now()}_${Math.round(Math.random() * 1e6)}${ext}`;
+
+    await r2.send(new PutObjectCommand({
+        Bucket:      process.env.R2_BUCKET_NAME,
+        Key:         key,
+        Body:        req.file.buffer,
+        ContentType: req.file.mimetype,
+    }));
+
+    attachment = {
+        file_path:     key,          // store the R2 key
+        original_name: req.file.originalname,
+        size_bytes:    req.file.size,
+        url:           buildJobDocUrl(key), // store the public URL
+    };
+}
 
         const jobPost = await JobPost.create({
             postedBy: req.user._id,
@@ -107,13 +136,18 @@ const deleteJobPost = async (req, res) => {
         }
 
         // Delete the attached PDF from disk if it exists
-        if (jobPost.attachment?.file_path) {
-            const fileName = path.basename(jobPost.attachment.file_path);
-            const fullPath = path.join(__dirname, '..', 'uploads', 'jobdocs', fileName);
-            if (fs.existsSync(fullPath)) {
-                fs.unlinkSync(fullPath);
-            }
-        }
+        // Delete from R2 if attachment exists
+if (jobPost.attachment?.file_path) {
+    try {
+        await r2.send(new DeleteObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key:    jobPost.attachment.file_path, // this is the R2 key
+        }));
+    } catch (r2Err) {
+        console.error('Failed to delete R2 file:', r2Err.message);
+        // Continue anyway — delete the DB record even if R2 delete fails
+    }
+}
 
         await jobPost.deleteOne();
 
@@ -514,18 +548,12 @@ const downloadJobAttachment = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Job post not found' });
         }
 
-        if (!jobPost.attachment?.file_path) {
+        if (!jobPost.attachment?.url) {
             return res.status(404).json({ success: false, message: 'No attachment found' });
         }
 
-        const fileName = path.basename(jobPost.attachment.file_path);
-        const fullPath = path.join(__dirname, '..', 'uploads', 'jobdocs', fileName);
-
-        if (!fs.existsSync(fullPath)) {
-            return res.status(404).json({ success: false, message: 'File not found on server' });
-        }
-
-        res.download(fullPath, jobPost.attachment.original_name || fileName);
+        // Redirect to the R2 public URL — the file is served directly from cloud
+        res.redirect(jobPost.attachment.url);
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

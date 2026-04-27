@@ -108,6 +108,7 @@ const jobPostSchema = new mongoose.Schema(
             file_path:     { type: String, default: null },
             original_name: { type: String, default: null },
             size_bytes:    { type: Number, default: null },
+            url:           { type: String, default: null },
         },
     },
     {
