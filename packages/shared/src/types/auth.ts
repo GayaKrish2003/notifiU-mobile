@@ -33,4 +33,9 @@ export interface JobPost {
   viewCount: number;
   createdAt: string;
   updatedAt: string;
+  attachment?: {
+  file_path:     string;
+  original_name: string;
+  size_bytes:    number;
+} | null;
 }

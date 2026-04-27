@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const jobDocUpload = require('../middlewares/jobDocUploadMiddleware');
 
 const {
     createJobPost,
@@ -16,6 +16,7 @@ const {
     approveJobPost,
     rejectJobPost,
     updateJobPost,
+    downloadJobAttachment,
 } = require('../controllers/jobPostController');
 
 const { protect, authorize } = require('../middlewares/authMiddleware');
@@ -30,6 +31,7 @@ router.post(
     '/',
     protect,
     authorize(['jobprovider']),
+    jobDocUpload.single('attachment'),
     createJobPost
 );
 
@@ -131,6 +133,13 @@ router.patch(
     protect,
     authorize(['superadmin']),
     rejectJobPost
+);
+
+// Download job post attachment (any logged in user)
+router.get(
+    '/:id/attachment',
+    protect,
+    downloadJobAttachment
 );
 
 module.exports = router;

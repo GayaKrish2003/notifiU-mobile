@@ -102,6 +102,13 @@ const jobPostSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        // ──────────────── Optional PDF Attachment ────────────────
+        // Job provider can attach a job description PDF
+        attachment: {
+            file_path:     { type: String, default: null },
+            original_name: { type: String, default: null },
+            size_bytes:    { type: Number, default: null },
+        },
     },
     {
         // timestamps: true automatically adds createdAt and updatedAt fields

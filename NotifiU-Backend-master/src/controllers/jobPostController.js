@@ -1,4 +1,6 @@
 const JobPost = require('../models/jobPost');
+const fs = require('fs');
+const path = require('path');
 
 // @desc    Create a new job post
 // @route   POST /api/jobs
@@ -20,6 +22,13 @@ const createJobPost = async (req, res) => {
 
         // req.user is set by the protect middleware automatically
         // It contains the logged-in user's data including their _id
+        // Build attachment object if a file was uploaded
+        const attachment = req.file ? {
+            file_path:     `/uploads/jobdocs/${req.file.filename}`,
+            original_name: req.file.originalname,
+            size_bytes:    req.file.size,
+        } : null;
+
         const jobPost = await JobPost.create({
             postedBy: req.user._id,
             title,
@@ -31,6 +40,7 @@ const createJobPost = async (req, res) => {
             salaryRange,
             applicationLink,
             deadline,
+            ...(attachment && { attachment }),
         });
 
         res.status(201).json({
@@ -94,6 +104,15 @@ const deleteJobPost = async (req, res) => {
                 success: false,
                 message: 'You are not authorized to delete this post',
             });
+        }
+
+        // Delete the attached PDF from disk if it exists
+        if (jobPost.attachment?.file_path) {
+            const fileName = path.basename(jobPost.attachment.file_path);
+            const fullPath = path.join(__dirname, '..', 'uploads', 'jobdocs', fileName);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath);
+            }
         }
 
         await jobPost.deleteOne();
@@ -484,6 +503,34 @@ const updateJobPost = async (req, res) => {
   }
 };
 
+// @desc    Download job post attachment
+// @route   GET /api/jobs/:id/attachment
+// @access  Protected (any logged in user)
+const downloadJobAttachment = async (req, res) => {
+    try {
+        const jobPost = await JobPost.findById(req.params.id);
+
+        if (!jobPost) {
+            return res.status(404).json({ success: false, message: 'Job post not found' });
+        }
+
+        if (!jobPost.attachment?.file_path) {
+            return res.status(404).json({ success: false, message: 'No attachment found' });
+        }
+
+        const fileName = path.basename(jobPost.attachment.file_path);
+        const fullPath = path.join(__dirname, '..', 'uploads', 'jobdocs', fileName);
+
+        if (!fs.existsSync(fullPath)) {
+            return res.status(404).json({ success: false, message: 'File not found on server' });
+        }
+
+        res.download(fullPath, jobPost.attachment.original_name || fileName);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 
 
 module.exports = {
@@ -500,4 +547,5 @@ module.exports = {
     approveJobPost,
     rejectJobPost,
     updateJobPost,
+    downloadJobAttachment,
 };

@@ -190,6 +190,10 @@ export const rejectJobPost = (id: string, rejectionReason: string) =>
   api.patch(`/jobs/${id}/reject`, { rejectionReason });
 export const updateJobPost = (id: string, data: Partial<import("../types/auth").JobPost>) =>
   api.patch(`/jobs/${id}/edit`, data);
+export const getJobAttachmentUrl = (id: string): string =>
+  `${BASE_URL}/jobs/${id}/attachment`;
+export const downloadJobAttachment = (id: string) =>
+  api.get(`/jobs/${id}/attachment`, { responseType: "blob" });
 
 
 export default api;
