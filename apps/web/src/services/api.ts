@@ -78,7 +78,7 @@ export const getUsersByRole = (role: string) => api.get(`/users/role/${role}`);
 export const updateUserByAdmin = (id: string, data: Payload) =>
   api.patch(`/users/${id}`, data);
 export const updateAccountStatus = (id: string, status: string) =>
-  api.patch(`/users/${id}/status`, { accountStatus: status }); // 
+  api.patch(`/users/${id}/status`, { accountStatus: status });
 export const deleteUser = (id: string) => api.delete(`/users/${id}`);
 export const exportUsersCSV = () =>
   api.get("/users/export/csv", { responseType: "blob" });
@@ -116,5 +116,34 @@ export const deleteAnnouncementAttachment = (
   id: string,
   attachmentId: string,
 ) => api.delete(`/announcements/${id}/attachments/${attachmentId}`);
+
+// ================= MODULE API =================
+
+export const getModules = () => api.get("/modules");
+
+export const deleteModule = (id: string) => api.delete(`/modules/${id}`);
+
+export const getModuleById = (id: string) => api.get(`/modules/${id}`);
+
+export const uploadModuleFiles = (id: string, data: FormData) =>
+  api.post(`/modules/${id}/upload`, data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+export const renameModuleFile = (
+  id: string,
+  storedName: string,
+  displayName: string,
+) => api.put(`/modules/${id}/file/rename`, { storedName, displayName });
+
+export const deleteModuleFile = (id: string, storedName: string) =>
+  api.delete(`/modules/${id}/file`, {
+    data: { storedName },
+  });
+
+export const getLecturerEnrollments = (moduleId?: string) =>
+  api.get("/lecturer/enrollments", {
+    params: moduleId ? { moduleId } : {},
+  });
 
 export default api;

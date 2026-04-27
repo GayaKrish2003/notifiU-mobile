@@ -8,11 +8,13 @@ const helmet = require('helmet');
 const { connectDB } = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const lecturerRoutes = require('./routes/lecturerRoutes');
+const moduleRoutes = require("./routes/moduleRoutes");
 const authRoutes = require('./routes/authRoutes');
 const announcementsRouter = require('./routes/announcementsRoutes');
 const ticketsRouter = require('./routes/ticketsRoutes');
 const chatRouter = require('./routes/chatRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
+const jobPostRoutes = require('./routes/jobPostRoutes');
 
 // Initialize Express
 const app = express();
@@ -55,10 +57,12 @@ if (process.env.NODE_ENV === 'development') {
 // 5. Routes
 app.use('/api/users', userRoutes);
 app.use('/api/lecturer', lecturerRoutes);
+app.use("/api", moduleRoutes);;
 app.use('/api/auth', authRoutes);
 app.use('/api', announcementsRouter);
 app.use('/api', ticketsRouter);
 app.use('/api', chatRouter);
+app.use('/api/jobs', jobPostRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {

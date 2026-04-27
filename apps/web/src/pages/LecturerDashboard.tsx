@@ -28,6 +28,12 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
+  getModules,
+  getModuleById,
+  uploadModuleFiles,
+  renameModuleFile,
+  deleteModuleFile,
+  getLecturerEnrollments,
 } from "../services/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -39,6 +45,7 @@ type TabKey =
   | "events"
   | "faqs"
   | "profile";
+
 type AnnouncementView = "list" | "create" | "detail";
 
 interface UserData {
@@ -67,6 +74,7 @@ interface ModuleItem {
   code: string;
   semester: string;
 }
+
 interface GroupItem {
   name: string;
   students: string;
@@ -110,6 +118,32 @@ interface CreateFormData {
   priority: "low" | "medium" | "high" | "urgent" | "";
   expiry_date: string;
   publish_date: string;
+}
+
+interface ModuleFileItem {
+  storedName: string;
+  displayName: string;
+  url: string;
+}
+
+interface ModuleData {
+  _id: string;
+  moduleCode: string;
+  moduleName: string;
+  semester: string;
+  academicYear: string;
+  lecturerId?: string | { _id?: string };
+  archived?: boolean;
+  files: ModuleFileItem[];
+}
+
+interface EnrollmentItem {
+  _id: string;
+  studentId: string;
+  studentName: string;
+  moduleId: string;
+  moduleCode?: string;
+  moduleName?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -166,7 +200,11 @@ const NavItem: React.FC<NavItemProps> = ({
       }
     />
     <span
-      className={`text-[10px] font-black uppercase tracking-[0.1em] ${active ? "text-[#FBB017]" : "text-white/40 group-hover:text-white/80"}`}
+      className={`text-[10px] font-black uppercase tracking-[0.1em] ${
+        active
+          ? "text-[#FBB017]"
+          : "text-white/40 group-hover:text-white/80"
+      }`}
     >
       {label}
     </span>
@@ -182,6 +220,7 @@ const LecturerProfileView: React.FC<LecturerProfileViewProps> = ({
     { name: "Database Systems", code: "IT1102", semester: "Year 1 Sem 2" },
     { name: "Data Structures", code: "IT2010", semester: "Year 2 Sem 1" },
   ];
+
   const groups: GroupItem[] = [
     { name: "SE2020 - Group A", students: "32 Students" },
     { name: "IT1102 - Group B", students: "28 Students" },
@@ -206,6 +245,7 @@ const LecturerProfileView: React.FC<LecturerProfileViewProps> = ({
             </p>
           </div>
         </div>
+
         <div className="space-y-10">
           {[
             { label: "NIC", value: userData?.nic },
@@ -220,6 +260,7 @@ const LecturerProfileView: React.FC<LecturerProfileViewProps> = ({
               </p>
             </div>
           ))}
+
           <div className="pt-4">
             <button
               onClick={onEditClick}
@@ -230,6 +271,7 @@ const LecturerProfileView: React.FC<LecturerProfileViewProps> = ({
             </button>
           </div>
         </div>
+
         <div className="border-2 border-[#FBB017] rounded-[2.5rem] p-10 bg-white/50">
           <div className="grid grid-cols-2 gap-x-12 gap-y-10">
             {[
@@ -275,6 +317,7 @@ const LecturerProfileView: React.FC<LecturerProfileViewProps> = ({
                 {section.title}
               </h2>
             </div>
+
             <div className="bg-[#EBECEF]/40 rounded-[2.5rem] p-8 space-y-4 shadow-inner">
               {section.items.map((item, idx) => (
                 <div
@@ -301,9 +344,11 @@ const LecturerProfileView: React.FC<LecturerProfileViewProps> = ({
 
 const LecturerDashboard: React.FC = () => {
   const navigate = useNavigate();
+
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [fullUserData, setFullUserData] = useState<UserData | null>(null);
+
   const [user, setUser] = useState<HeaderUser>({
     name: "Lecturer",
     displayId: "LEC00000",
@@ -326,12 +371,32 @@ const LecturerDashboard: React.FC = () => {
     expiry_date: "",
     publish_date: "",
   };
+
   const [formData, setFormData] = useState<CreateFormData>(emptyForm);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [formLoading, setFormLoading] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>("");
 
-  // Edit state
+  // ── Module state ──
+  const [modules, setModules] = useState<ModuleData[]>([]);
+  const [selectedModule, setSelectedModule] = useState<ModuleData | null>(null);
+  const [loadingModules, setLoadingModules] = useState(false);
+  const [moduleSearch, setModuleSearch] = useState("");
+  const [moduleSemester, setModuleSemester] = useState("");
+  const [moduleError, setModuleError] = useState("");
+  const [moduleView, setModuleView] = useState<"list" | "detail">("list");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [renamingStoredName, setRenamingStoredName] = useState<string | null>(
+    null,
+  );
+  const [renameValue, setRenameValue] = useState("");
+  const [moduleEnrollments, setModuleEnrollments] = useState<EnrollmentItem[]>(
+    [],
+  );
+  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
+
+  // ── Edit state ──
   const [editAnn, setEditAnn] = useState<Announcement | null>(null);
   const [editForm, setEditForm] = useState<CreateFormData>(emptyForm);
   const [editLoading, setEditLoading] = useState<boolean>(false);
@@ -340,6 +405,7 @@ const LecturerDashboard: React.FC = () => {
   const fetchAnnouncements = () => {
     setAnnLoading(true);
     setAnnError("");
+
     getAnnouncements()
       .then((res) => setAnnouncements(res.data as Announcement[]))
       .catch(() => setAnnError("Failed to load announcements."))
@@ -354,13 +420,16 @@ const LecturerDashboard: React.FC = () => {
 
   const updateHeader = (userData: UserData | null): void => {
     if (!userData) return;
+
     const displayId =
       userData.lecturerId ||
       userData._id?.substring(0, 8).toUpperCase() ||
       "LEC00000";
+
     const names = userData.name.trim().split(" ");
     let formattedName = userData.name;
     let initials = "LC";
+
     if (names.length >= 2) {
       formattedName = `${names[0].charAt(0).toUpperCase()}.${names[names.length - 1]}`;
       initials = (
@@ -369,12 +438,14 @@ const LecturerDashboard: React.FC = () => {
     } else if (names.length === 1) {
       initials = names[0].substring(0, 2).toUpperCase();
     }
+
     setUser({
       name: formattedName,
       displayId,
       initials,
       profileImage: userData.profileImage,
     });
+
     setFullUserData(userData);
   };
 
@@ -389,7 +460,7 @@ const LecturerDashboard: React.FC = () => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-   const validateCreateForm = () => {
+  const validateCreateForm = () => {
     if (!formData.title.trim()) return "Title is required.";
     if (!formData.content.trim()) return "Content is required.";
     if (!formData.priority) return "Please select a category.";
@@ -486,8 +557,16 @@ const LecturerDashboard: React.FC = () => {
   const handleEditSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editAnn) return;
+
+    const validationError = validateEditForm();
+    if (validationError) {
+      setEditError(validationError);
+      return;
+    }
+
     setEditLoading(true);
     setEditError("");
+
     try {
       const updated = await updateAnnouncement(editAnn._id, {
         title: editForm.title,
@@ -496,11 +575,13 @@ const LecturerDashboard: React.FC = () => {
         expiry_date: editForm.expiry_date || undefined,
         status: editAnn.status,
       });
+
       setAnnouncements((prev) =>
         prev.map((a) =>
           a._id === editAnn._id ? (updated.data as Announcement) : a,
         ),
       );
+
       setEditAnn(null);
     } catch {
       setEditError("Failed to update announcement.");
@@ -514,6 +595,7 @@ const LecturerDashboard: React.FC = () => {
       await deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a._id !== id));
     } catch {
+      // ignore
     } finally {
       setDeleteConfirmId(null);
     }
@@ -528,9 +610,164 @@ const LecturerDashboard: React.FC = () => {
       a.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const underConstructionTabs: TabKey[] = ["module", "events"];
+  const semesterOptions = [
+    "Year 1 Semester 1",
+    "Year 1 Semester 2",
+    "Year 2 Semester 1",
+    "Year 2 Semester 2",
+    "Year 3 Semester 1",
+    "Year 3 Semester 2",
+    "Year 4 Semester 1",
+    "Year 4 Semester 2",
+  ];
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  const fetchModules = async () => {
+    try {
+      setLoadingModules(true);
+      setModuleError("");
+
+      const res = await getModules();
+      const allModules = (res.data || []) as ModuleData[];
+
+      const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const loggedInLecturerId =
+        fullUserData?._id || savedUser?._id || savedUser?.id;
+
+      const lecturerModules = allModules.filter((m) => {
+        if (m.archived) return false;
+
+        const moduleLecturerId =
+          typeof m.lecturerId === "object" ? m.lecturerId?._id : m.lecturerId;
+
+        if (!loggedInLecturerId) return true;
+        return String(moduleLecturerId || "") === String(loggedInLecturerId);
+      });
+
+      setModules(lecturerModules);
+    } catch (error) {
+      console.error(error);
+      setModuleError("Failed to load modules.");
+    } finally {
+      setLoadingModules(false);
+    }
+  };
+
+  const fetchModuleDetails = async (moduleId: string) => {
+    try {
+      setLoadingModules(true);
+      setLoadingEnrollments(true);
+      setModuleError("");
+
+      const [moduleRes, enrollRes] = await Promise.all([
+        getModuleById(moduleId),
+        getLecturerEnrollments(moduleId),
+      ]);
+
+      setSelectedModule(moduleRes.data as ModuleData);
+      setModuleEnrollments((enrollRes.data || []) as EnrollmentItem[]);
+      setModuleView("detail");
+    } catch (error) {
+      console.error(error);
+      setModuleError("Failed to load module details.");
+    } finally {
+      setLoadingModules(false);
+      setLoadingEnrollments(false);
+    }
+  };
+
+  const handleModuleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setSelectedFiles(files);
+  };
+
+  const handleUploadModuleFiles = async () => {
+    if (!selectedModule || selectedFiles.length === 0) return;
+
+    try {
+      setUploadingFiles(true);
+
+      const formData = new FormData();
+      selectedFiles.forEach((file) => {
+        formData.append("files", file);
+      });
+
+      await uploadModuleFiles(selectedModule._id, formData);
+      setSelectedFiles([]);
+      await fetchModuleDetails(selectedModule._id);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to upload files");
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+
+  const startRenameFile = (file: ModuleFileItem) => {
+    setRenamingStoredName(file.storedName);
+    setRenameValue(file.displayName);
+  };
+
+  const cancelRenameFile = () => {
+    setRenamingStoredName(null);
+    setRenameValue("");
+  };
+
+  const saveRenameFile = async () => {
+    if (!selectedModule || !renamingStoredName || !renameValue.trim()) return;
+
+    try {
+      await renameModuleFile(
+        selectedModule._id,
+        renamingStoredName,
+        renameValue.trim(),
+      );
+      setRenamingStoredName(null);
+      setRenameValue("");
+      await fetchModuleDetails(selectedModule._id);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to rename file");
+    }
+  };
+
+  const handleDeleteModuleFile = async (storedName: string) => {
+    if (!selectedModule) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this file?",
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteModuleFile(selectedModule._id, storedName);
+      await fetchModuleDetails(selectedModule._id);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete file");
+    }
+  };
+
+  const filteredModules = modules.filter((m) => {
+    const search = moduleSearch.toLowerCase();
+
+    const matchesSearch =
+      m.moduleName.toLowerCase().includes(search) ||
+      m.moduleCode.toLowerCase().includes(search);
+
+    const matchesSemester = moduleSemester
+      ? m.semester === moduleSemester
+      : true;
+
+    return matchesSearch && matchesSemester;
+  });
+
+  useEffect(() => {
+    if (activeTab === "module") {
+      fetchModules();
+    }
+  }, [activeTab, fullUserData]);
+
+  const underConstructionTabs: TabKey[] = ["events"];
 
   return (
     <div className="min-h-screen bg-white relative">
@@ -556,12 +793,14 @@ const LecturerDashboard: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
+
             <form onSubmit={handleEditSave} className="px-8 py-6 space-y-5">
               {editError && (
                 <div className="bg-red-50 text-red-500 text-sm p-3 rounded-xl text-center">
                   {editError}
                 </div>
               )}
+
               <div>
                 <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                   Title <span className="text-red-500">*</span>
@@ -576,6 +815,7 @@ const LecturerDashboard: React.FC = () => {
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#2D3A5D] outline-none focus:border-[#FBB017] transition-colors"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                   Description / Content <span className="text-red-500">*</span>
@@ -591,6 +831,7 @@ const LecturerDashboard: React.FC = () => {
                   className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#2D3A5D] outline-none focus:border-[#FBB017] transition-colors resize-none"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
@@ -612,6 +853,7 @@ const LecturerDashboard: React.FC = () => {
                     <option value="urgent">Urgent</option>
                   </select>
                 </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                     Deadline Date
@@ -629,6 +871,7 @@ const LecturerDashboard: React.FC = () => {
                   />
                 </div>
               </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -767,6 +1010,7 @@ const LecturerDashboard: React.FC = () => {
               <h1 className="text-2xl font-black text-[#2D3A5D]/20 tracking-[0.3em] uppercase">
                 ANNOUNCEMENTS
               </h1>
+
               <div className="relative w-96 group">
                 <Search
                   className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#FBB017] transition-colors"
@@ -779,17 +1023,20 @@ const LecturerDashboard: React.FC = () => {
                 />
               </div>
             </div>
+
             <div className="space-y-4">
               {annLoading && (
                 <p className="text-center text-[#2D3A5D]/30 font-bold py-16">
                   Loading...
                 </p>
               )}
+
               {annError && (
                 <p className="text-center text-red-400 font-bold py-16">
                   {annError}
                 </p>
               )}
+
               {!annLoading &&
                 !annError &&
                 announcements
@@ -812,17 +1059,20 @@ const LecturerDashboard: React.FC = () => {
                           {PRIORITY_LABELS[ann.priority]}
                         </div>
                       </div>
+
                       <p className="text-[#2D3A5D] font-bold text-sm">
                         {ann.title}
                       </p>
                       <p className="text-[#2D3A5D]/60 text-sm mt-1">
                         {ann.content}
                       </p>
+
                       <div className="absolute right-8 bottom-5 text-[#2D3A5D]/30 font-bold text-xs tracking-widest">
                         {formatTime(ann.publish_date)}
                       </div>
                     </div>
                   ))}
+
               {!annLoading &&
                 !annError &&
                 announcements.filter((a) => a.status === "published").length ===
@@ -838,7 +1088,6 @@ const LecturerDashboard: React.FC = () => {
         {/* ── ANNOUNCEMENT tab ── */}
         {activeTab === "announcement" && annView === "list" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Top bar */}
             <div className="flex justify-end mb-6">
               <button
                 onClick={() => {
@@ -857,6 +1106,7 @@ const LecturerDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold text-[#2D3A5D]">
                 ANNOUNCEMENTS
               </h1>
+
               <div className="relative w-80 group">
                 <Search
                   className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#FBB017] transition-colors"
@@ -872,7 +1122,6 @@ const LecturerDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Table */}
             <div className="border border-gray-100 rounded-2xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -886,6 +1135,7 @@ const LecturerDashboard: React.FC = () => {
                     <th className="text-left px-6 py-4">Actions</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {annLoading && (
                     <tr>
@@ -897,6 +1147,7 @@ const LecturerDashboard: React.FC = () => {
                       </td>
                     </tr>
                   )}
+
                   {annError && (
                     <tr>
                       <td
@@ -907,12 +1158,15 @@ const LecturerDashboard: React.FC = () => {
                       </td>
                     </tr>
                   )}
+
                   {!annLoading &&
                     !annError &&
                     filteredAnnouncements.map((ann, idx) => (
                       <tr
                         key={ann._id}
-                        className={`border-t border-gray-50 hover:bg-[#FAFAFA] transition-colors ${idx % 2 === 0 ? "" : "bg-gray-50/30"}`}
+                        className={`border-t border-gray-50 hover:bg-[#FAFAFA] transition-colors ${
+                          idx % 2 === 0 ? "" : "bg-gray-50/30"
+                        }`}
                       >
                         <td className="px-6 py-4 text-[#2D3A5D] font-medium">
                           {ann.title}
@@ -933,7 +1187,9 @@ const LecturerDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <span
-                            className={`text-[11px] font-bold px-3 py-1 rounded-full ${STATUS_COLOR[ann.status]}`}
+                            className={`text-[11px] font-bold px-3 py-1 rounded-full ${
+                              STATUS_COLOR[ann.status]
+                            }`}
                           >
                             {STATUS_LABEL[ann.status]}
                           </span>
@@ -968,6 +1224,7 @@ const LecturerDashboard: React.FC = () => {
                         </td>
                       </tr>
                     ))}
+
                   {!annLoading &&
                     !annError &&
                     filteredAnnouncements.length === 0 && (
@@ -1013,7 +1270,6 @@ const LecturerDashboard: React.FC = () => {
               )}
 
               <form onSubmit={handlePublish} className="space-y-6">
-                {/* Title */}
                 <div>
                   <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                     Title <span className="text-red-500">*</span>
@@ -1028,7 +1284,6 @@ const LecturerDashboard: React.FC = () => {
                   />
                 </div>
 
-                {/* Content */}
                 <div>
                   <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                     Description / Content{" "}
@@ -1045,7 +1300,6 @@ const LecturerDashboard: React.FC = () => {
                   />
                 </div>
 
-                {/* Category + Target */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
@@ -1064,6 +1318,7 @@ const LecturerDashboard: React.FC = () => {
                       <option value="urgent">Urgent</option>
                     </select>
                   </div>
+
                   <div>
                     <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                       Target Type <span className="text-red-500">*</span>
@@ -1077,7 +1332,6 @@ const LecturerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
@@ -1091,6 +1345,7 @@ const LecturerDashboard: React.FC = () => {
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#2D3A5D] outline-none focus:border-[#FBB017] transition-colors"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                       Published Date <span className="text-red-500">*</span>
@@ -1105,7 +1360,6 @@ const LecturerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Attachment */}
                 <div>
                   <label className="block text-sm font-semibold text-[#2D3A5D] mb-2">
                     Attachment (PDF / Notice)
@@ -1129,7 +1383,6 @@ const LecturerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex justify-end gap-4 pt-4">
                   <button
                     type="button"
@@ -1178,6 +1431,7 @@ const LecturerDashboard: React.FC = () => {
                     {PRIORITY_LABELS[selectedAnn.priority]}
                   </div>
                 </div>
+
                 <div className="space-y-1 mb-8">
                   <p className="text-[#2D3A5D] font-bold text-sm">
                     {selectedAnn.title}
@@ -1186,6 +1440,7 @@ const LecturerDashboard: React.FC = () => {
                     {selectedAnn.content}
                   </p>
                 </div>
+
                 <div className="absolute right-8 bottom-5 text-[#2D3A5D]/30 font-bold text-xs tracking-widest">
                   {formatTime(selectedAnn.publish_date)}
                 </div>
@@ -1202,6 +1457,7 @@ const LecturerDashboard: React.FC = () => {
                       {att.original_name}
                     </span>
                   </div>
+
                   <a
                     href={`http://localhost:5005${att.file_path}`}
                     download={att.original_name}
@@ -1214,6 +1470,304 @@ const LecturerDashboard: React.FC = () => {
               ))}
             </div>
           )}
+
+        {/* ── MODULE LIST VIEW ── */}
+        {activeTab === "module" && moduleView === "list" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+              <h1 className="text-2xl font-black text-[#2D3A5D] uppercase tracking-wide">
+                MODULE MANAGEMENT
+              </h1>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative w-full md:w-80 group">
+                  <Search
+                    className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-[#FBB017] transition-colors"
+                    size={16}
+                  />
+                  <input
+                    type="text"
+                    value={moduleSearch}
+                    onChange={(e) => setModuleSearch(e.target.value)}
+                    placeholder="Search by module name or code"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-[1.5rem] py-3 pl-12 pr-5 text-sm outline-none focus:bg-white focus:border-[#FBB017]/30 text-[#2D3A5D] font-medium transition-all"
+                  />
+                </div>
+
+                <select
+                  value={moduleSemester}
+                  onChange={(e) => setModuleSemester(e.target.value)}
+                  className="bg-gray-50 border border-gray-100 rounded-[1.5rem] py-3 px-5 text-sm outline-none focus:bg-white focus:border-[#FBB017]/30 text-[#2D3A5D] font-medium transition-all"
+                >
+                  <option value="">All Semesters</option>
+                  {semesterOptions.map((semester) => (
+                    <option key={semester} value={semester}>
+                      {semester}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {loadingModules && (
+              <p className="text-center text-[#2D3A5D]/30 font-bold py-16">
+                Loading modules...
+              </p>
+            )}
+
+            {moduleError && (
+              <p className="text-center text-red-400 font-bold py-16">
+                {moduleError}
+              </p>
+            )}
+
+            {!loadingModules && !moduleError && filteredModules.length === 0 && (
+              <p className="text-center text-[#2D3A5D]/30 font-bold tracking-widest py-16">
+                No modules assigned.
+              </p>
+            )}
+
+            {!loadingModules && !moduleError && filteredModules.length > 0 && (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {filteredModules.map((module) => (
+                  <div
+                    key={module._id}
+                    className="bg-[#EBECEF]/40 hover:bg-white border border-transparent hover:border-[#FBB017]/10 rounded-2xl px-8 py-6 transition-all duration-300 hover:shadow-lg"
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <h2 className="text-[#2D3A5D] font-black text-lg">
+                          {module.moduleName}
+                        </h2>
+                        <p className="text-[#2D3A5D]/50 text-sm font-semibold mt-1">
+                          {module.moduleCode}
+                        </p>
+                        <p className="text-[#2D3A5D]/40 text-xs font-bold uppercase mt-2 tracking-widest">
+                          {module.semester} • {module.academicYear}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => fetchModuleDetails(module._id)}
+                        className="bg-[#1A1C2C] hover:bg-[#2D3A5D] text-white text-xs font-bold px-5 py-3 rounded-xl transition-all"
+                      >
+                        Open Module
+                      </button>
+                    </div>
+
+                    <div className="mt-5 flex items-center gap-3 text-xs">
+                      <span className="bg-white border border-[#FBB017]/30 text-[#FBB017] font-bold px-3 py-1 rounded-full">
+                        {module.files?.length || 0} Files
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── MODULE DETAIL VIEW ── */}
+        {activeTab === "module" && moduleView === "detail" && selectedModule && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-6 mb-8">
+              <button
+                onClick={() => {
+                  setModuleView("list");
+                  setSelectedModule(null);
+                  setSelectedFiles([]);
+                  setRenamingStoredName(null);
+                  setRenameValue("");
+                }}
+                className="flex items-center gap-2 text-[#2D3A5D]/40 hover:text-[#FBB017] transition-colors font-bold text-sm"
+              >
+                <ArrowLeft size={18} />
+                Back
+              </button>
+
+              <h1 className="text-2xl font-black text-[#2D3A5D]/20 tracking-[0.3em] uppercase">
+                MODULE DETAILS
+              </h1>
+            </div>
+
+            <div className="bg-[#EBECEF]/40 rounded-2xl px-8 py-6 mb-6">
+              <h2 className="text-[#2D3A5D] font-black text-2xl">
+                {selectedModule.moduleName}
+              </h2>
+              <p className="text-[#2D3A5D]/50 text-sm font-semibold mt-2">
+                {selectedModule.moduleCode}
+              </p>
+              <p className="text-[#2D3A5D]/40 text-xs font-bold uppercase mt-3 tracking-widest">
+                {selectedModule.semester} • {selectedModule.academicYear}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.9fr] gap-6">
+              <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-[#2D3A5D] font-black text-xl">
+                    Lecture Materials
+                  </h3>
+                </div>
+
+                <div className="border border-dashed border-gray-300 rounded-2xl p-5 mb-6 bg-gray-50/60">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <label className="inline-flex items-center gap-2 bg-[#1A1C2C] hover:bg-[#2D3A5D] text-white px-5 py-3 rounded-xl text-sm font-bold cursor-pointer transition-all w-fit">
+                      <Paperclip size={16} />
+                      Choose Files
+                      <input
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={handleModuleFileSelect}
+                      />
+                    </label>
+
+                    <button
+                      onClick={handleUploadModuleFiles}
+                      disabled={selectedFiles.length === 0 || uploadingFiles}
+                      className="bg-[#FBB017] hover:bg-[#e9a215] text-white px-5 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-60"
+                    >
+                      {uploadingFiles ? "Uploading..." : "Upload Files"}
+                    </button>
+                  </div>
+
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div
+                          key={`${file.name}-${index}`}
+                          className="text-sm text-[#2D3A5D]/70 font-medium"
+                        >
+                          {file.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {selectedModule.files?.length === 0 ? (
+                  <p className="text-center text-[#2D3A5D]/30 font-bold py-10">
+                    No files uploaded yet.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedModule.files.map((file, index) => (
+                      <div
+                        key={`${file.storedName}-${index}`}
+                        className="bg-[#EBECEF]/40 rounded-2xl px-6 py-5"
+                      >
+                        {renamingStoredName === file.storedName ? (
+                          <div className="space-y-4">
+                            <input
+                              type="text"
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#2D3A5D] outline-none focus:border-[#FBB017]"
+                            />
+
+                            <div className="flex gap-3">
+                              <button
+                                onClick={saveRenameFile}
+                                className="bg-[#1A1C2C] hover:bg-[#2D3A5D] text-white px-5 py-2.5 rounded-xl text-sm font-bold"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={cancelRenameFile}
+                                className="border border-gray-200 text-gray-500 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <div>
+                              <p className="text-[#2D3A5D] font-bold text-sm">
+                                {file.displayName}
+                              </p>
+                              <p className="text-[#2D3A5D]/30 text-xs mt-1 break-all">
+                                {file.storedName}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <a
+                                href={file.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#2D3A5D]/40 hover:text-[#FBB017] transition-colors"
+                                title="View file"
+                              >
+                                <Eye size={18} />
+                              </a>
+                              <button
+                                onClick={() => startRenameFile(file)}
+                                className="text-[#2D3A5D]/40 hover:text-[#FBB017] transition-colors"
+                                title="Rename file"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteModuleFile(file.storedName)
+                                }
+                                className="text-[#2D3A5D]/40 hover:text-red-500 transition-colors"
+                                title="Delete file"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-[#2D3A5D] font-black text-xl">
+                    Enrolled Students
+                  </h3>
+                  <span className="bg-[#FBB017]/10 text-[#FBB017] font-bold text-xs px-3 py-1 rounded-full">
+                    {moduleEnrollments.length} Students
+                  </span>
+                </div>
+
+                {loadingEnrollments && (
+                  <p className="text-[#2D3A5D]/30 font-bold">Loading...</p>
+                )}
+
+                {!loadingEnrollments && moduleEnrollments.length === 0 && (
+                  <p className="text-[#2D3A5D]/30 font-bold">
+                    No enrollments found.
+                  </p>
+                )}
+
+                {!loadingEnrollments && moduleEnrollments.length > 0 && (
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                    {moduleEnrollments.map((student) => (
+                      <div
+                        key={student._id}
+                        className="bg-[#EBECEF]/40 rounded-2xl px-5 py-4"
+                      >
+                        <p className="text-[#2D3A5D] font-bold text-sm">
+                          {student.studentName}
+                        </p>
+                        <p className="text-[#2D3A5D]/40 text-xs mt-1 font-semibold">
+                          {student.studentId}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── PROFILE tab ── */}
         {activeTab === "profile" && (
@@ -1231,10 +1785,10 @@ const LecturerDashboard: React.FC = () => {
         )}
 
         {/* FAQ TAB */}
-          {activeTab === "faqs" && (
+        {activeTab === "faqs" && (
           <div className="mt-10">
-          <ChatBot />
-         </div>
+            <ChatBot />
+          </div>
         )}
 
         {/* ── Under construction ── */}

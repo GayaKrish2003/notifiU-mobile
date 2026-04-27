@@ -87,6 +87,9 @@ const userSchema = new mongoose.Schema(
             type: String,
         },
 
+        bookmarkedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobPost' }],
+        appliedJobs:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'JobPost' }],
+
         // ──────────────── Lecturer-Specific Fields ────────────────
         department: {
             type: String,

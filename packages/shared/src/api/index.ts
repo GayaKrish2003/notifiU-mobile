@@ -20,7 +20,7 @@ export const getServerURL = () => BASE_URL.replace(/\/api\/?$/, "");
 
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true, // Important for refresh token cookie
+  withCredentials: false, // Important for refresh token cookie
 });
 
 // Avoid circular imports or issues with the singleton by fetching token on each request
@@ -73,7 +73,7 @@ api.interceptors.response.use(
 
       try {
         // Attempt to get a new access token using the refresh token cookie
-        const res = await axios.get(`${BASE_URL}/users/refresh`, { withCredentials: true });
+        const res = await axios.get(`${BASE_URL}/users/refresh`, { withCredentials: false });
         const { accessToken } = res.data;
 
         if (accessToken) {
@@ -157,4 +157,39 @@ export const deleteAnnouncementAttachment = (id: string, attachmentId: string) =
   api.delete(`/announcements/${id}/attachments/${attachmentId}`);
 
 
-export default api;
+// ─── Job Posts ─────────────────────────────────────────────────
+
+// Job Provider
+export const createJobPost = (data: Payload) =>
+  api.post('/jobs', data);
+export const getMyJobPosts = () =>
+  api.get('/jobs/my-posts');
+export const deleteJobPost = (id: string) =>
+  api.delete(`/jobs/${id}`);
+
+// Student
+export const getApprovedJobPosts = (params?: Record<string, string>) =>
+  api.get('/jobs', { params });
+export const getBookmarkedJobs = () =>
+  api.get('/jobs/bookmarks');
+export const getAppliedJobs = () =>
+  api.get('/jobs/applied');
+export const toggleBookmark = (id: string) =>
+  api.patch(`/jobs/${id}/bookmark`);
+export const toggleMarkApplied = (id: string) =>
+  api.patch(`/jobs/${id}/mark-applied`);
+export const incrementViewCount = (id: string) =>
+  api.patch(`/jobs/${id}/view`);
+
+// SuperAdmin
+export const getAllJobPostsAdmin = (params?: Record<string, string>) =>
+  api.get('/jobs/admin', { params });
+export const approveJobPost = (id: string) =>
+  api.patch(`/jobs/${id}/approve`);
+export const rejectJobPost = (id: string, rejectionReason: string) =>
+  api.patch(`/jobs/${id}/reject`, { rejectionReason });
+export const updateJobPost = (id: string, data: Partial<import("../types/auth").JobPost>) =>
+  api.patch(`/jobs/${id}/edit`, data);
+
+
+export default api;
