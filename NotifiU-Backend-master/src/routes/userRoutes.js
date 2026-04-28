@@ -7,6 +7,7 @@ const {
     registerStudent,
     registerLecturer,
     registerJobProvider,
+    registerClubPresident,
     // Login
     loginUser,
     loginStudent,
@@ -52,6 +53,7 @@ router.post('/register', registerUser);
 router.post('/register/student', registerStudent);
 router.post('/register/lecturer', registerLecturer);
 router.post('/register/jobprovider', registerJobProvider);
+router.post('/register/clubpresident', registerClubPresident); 
 
 // Login routes (role-specific)
 router.post('/login', loginUser);

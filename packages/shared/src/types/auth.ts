@@ -1,5 +1,17 @@
 export type UserRole = 'superadmin' | 'student' | 'lecturer' | 'jobprovider' | 'clubpresident';
 
+export interface LoginResponse {
+  success:       boolean;
+  _id:           string;
+  name:          string;
+  email:         string;
+  role:          UserRole;
+  accountStatus: string;
+  accessToken:   string;
+  studentId?:    string;
+  phonenumber?:  string;
+}
+
 export interface User {
   id: string;
   username: string;

@@ -275,6 +275,64 @@ const registerJobProvider = async (req, res) => {
     }
 };
 
+const registerClubPresident = async (req, res) => {
+    try {
+        const {
+            name, username, email, password,
+            address, age, nic, phonenumber,
+        } = req.body;
+
+        const userExists = await User.findOne({
+            $or: [{ email }, { username: username || email }, { nic }],
+        });
+
+        if (userExists) {
+            if (userExists.email === email)
+                return res.status(400).json({ success: false, message: 'Email already registered' });
+            if (userExists.nic === nic)
+                return res.status(400).json({ success: false, message: 'NIC already registered' });
+            return res.status(400).json({ success: false, message: 'Username already exists' });
+        }
+
+        const user = await User.create({
+            name,
+            username: username || email,
+            email,
+            password,
+            role: 'clubpresident',
+            address,
+            age,
+            nic,
+            phonenumber,
+            accountStatus: 'pending',
+        });
+
+        if (user) {
+            const accessToken = generateAccessToken(user._id, user.role);
+            const refreshToken = generateRefreshToken(user._id);
+
+            user.refreshToken = refreshToken;
+            user.recordLogin(req.ip, req.headers['user-agent']);
+            user.logActivity('register', 'Club president account created — pending approval');
+            await user.save();
+
+            setTokenCookie(res, refreshToken);
+
+            res.status(201).json({
+                success: true,
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                accountStatus: user.accountStatus,
+                accessToken,
+            });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
 // ═══════════════════════════════════════════════════════════════
 //  LOGIN CONTROLLERS
 // ═══════════════════════════════════════════════════════════════
@@ -1509,6 +1567,7 @@ module.exports = {
     registerStudent,
     registerLecturer,
     registerJobProvider,
+    registerClubPresident,
     // Login
     loginUser,
     loginStudent,

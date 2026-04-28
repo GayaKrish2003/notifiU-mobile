@@ -499,6 +499,7 @@ const SuperAdminDashboard: React.FC = () => {
     { value: "student", label: "Students" },
     { value: "lecturer", label: "Lecturers" },
     { value: "jobprovider", label: "Job Providers" },
+    { value: "clubpresident", label: "Club Presidents" }, 
   ];
 
   const statusOptions: RoleOption[] = [

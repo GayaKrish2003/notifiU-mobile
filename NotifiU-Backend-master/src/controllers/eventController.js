@@ -61,19 +61,15 @@ exports.createEvent = async (req, res) => {
 // ── Get All Events ────────────────────────────────────────────────────────────
 exports.getEvents = async (req, res) => {
     try {
-        const { category, organizingClub, status, type } = req.query;
+        const { category, organizingClub, type } = req.query;
         const query = {};
 
         if (category)       query.category       = category;
         if (organizingClub) query.organizingClub = organizingClub;
         if (type)           query.type           = type;
 
-        // Default: students see only Upcoming
-        if (status) {
-            query.status = status;
-        } else if (req.user.role === 'student') {
-            query.status = 'Upcoming';
-        }
+        // Always show only upcoming events — endTime in the future
+        query.endTime = { $gte: new Date() };
 
         const events = await Event.find(query).sort({ date: 1 });
         res.status(200).json({ success: true, data: events });
@@ -86,8 +82,15 @@ exports.getEvents = async (req, res) => {
 exports.getMyEvents = async (req, res) => {
     try {
         const { status } = req.query;
+        const now = new Date();
         const query = { createdBy: req.user._id };
-        if (status) query.status = status;
+
+        if (status === 'History') {
+            query.endTime = { $lt: now };
+        } else {
+            // Default: Upcoming — endTime in the future
+            query.endTime = { $gte: now };
+        }
 
         const events = await Event.find(query).sort({ date: -1 });
         res.status(200).json({ success: true, data: events });

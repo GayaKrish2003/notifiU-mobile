@@ -116,7 +116,7 @@ export const getUserById = (id: string) => api.get(`/users/${id}`);
 export const updateUserByAdmin = (id: string, data: Payload) =>
   api.put(`/users/${id}`, data);
 export const updateAccountStatus = (id: string, status: string) =>
-  api.patch(`/users/${id}/status`, { accountStatus: status });
+  api.patch(`/users/${id}/status`, { status });
 export const deleteUser = (id: string) => api.delete(`/users/${id}`);
 export const exportUsersCSV = () =>
   api.get("/users/export/csv", { responseType: "blob" });
