@@ -1,0 +1,812 @@
+{
+	"info": {
+		"_postman_id": "unistay-user-management-v5",
+		"name": "UniStay User Management API v5",
+		"description": "Complete User Management API for UniStay. Roles: Student, Lecturer, Job Provider, SuperAdmin. Features: Multi-role registration, RBAC, profile management, admin dashboard with search/filter/pagination, account lifecycle (pending/active/suspended/deactivated), CSV & Excel export, and activity monitoring.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01. Registration",
+			"description": "Public endpoints for user self-registration. Each role has a dedicated registration endpoint with role-specific validation.",
+			"item": [
+				{
+					"name": "Register (Generic - defaults to Student)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Generic User\",\n    \"email\": \"generic@unistay.com\",\n    \"password\": \"password123\",\n    \"university\": \"University of Colombo\",\n    \"address\": \"123 Main St, Colombo\",\n    \"age\": 22,\n    \"nic\": \"200298765000\",\n    \"phonenumber\": \"0770000001\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "register"]
+						},
+						"description": "Generic registration endpoint. Defaults to student role. Use role-specific endpoints for better validation."
+					},
+					"response": []
+				},
+				{
+					"name": "Register Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Student\",\n    \"email\": \"student@unistay.com\",\n    \"password\": \"password123\",\n    \"university\": \"University of Colombo\",\n    \"faculty\": \"Faculty of Science\",\n    \"academicYear\": \"3rd Year\",\n    \"studentId\": \"S2024001\",\n    \"address\": \"789 Student St, Colombo\",\n    \"age\": 22,\n    \"nic\": \"200298765432\",\n    \"phonenumber\": \"0770000000\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/register/student",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "register", "student"]
+						},
+						"description": "Register a new student. Requires: name, email, password, university, address, age, nic, phonenumber. Optional: faculty, academicYear, studentId, username."
+					},
+					"response": []
+				},
+				{
+					"name": "Register Lecturer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Dr. Test Lecturer\",\n    \"email\": \"lecturer@unistay.com\",\n    \"password\": \"password123\",\n    \"university\": \"University of Colombo\",\n    \"department\": \"Computer Science\",\n    \"lecturerId\": \"LEC2024001\",\n    \"address\": \"123 Academic Ave, Colombo\",\n    \"age\": 40,\n    \"nic\": \"198512349876\",\n    \"phonenumber\": \"0722222222\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/register/lecturer",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "register", "lecturer"]
+						},
+						"description": "Register a new lecturer. Requires: name, email, password, university, address, age, nic, phonenumber. Optional: department, lecturerId, username."
+					},
+					"response": []
+				},
+				{
+					"name": "Register Job Provider",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"HR Manager\",\n    \"email\": \"jobprovider@unistay.com\",\n    \"password\": \"password123\",\n    \"companyName\": \"Tech Solutions Ltd\",\n    \"designation\": \"HR Manager\",\n    \"companyWebsite\": \"https://techsolutions.lk\",\n    \"address\": \"456 Business Park, Colombo 03\",\n    \"age\": 35,\n    \"nic\": \"199012345678\",\n    \"phonenumber\": \"0733333333\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/register/jobprovider",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "register", "jobprovider"]
+						},
+						"description": "Register a new job provider. Requires: name, email, password, companyName, address, age, nic, phonenumber. Optional: designation, companyWebsite, username."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. Login & Auth",
+			"description": "Authentication endpoints. All login endpoints auto-save the accessToken to collection variables via test scripts.",
+			"item": [
+				{
+					"name": "Login Super Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"superadmin@unistay.com\",\n    \"password\": \"superadmin\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "login"]
+						},
+						"description": "Login with any role using the generic endpoint. Use this for SuperAdmin login."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@unistay.com\",\n    \"password\": \"password123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/login/student",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "login", "student"]
+						},
+						"description": "Login as a student. Only users with role=student can login via this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Lecturer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"lecturer@unistay.com\",\n    \"password\": \"password123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/login/lecturer",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "login", "lecturer"]
+						},
+						"description": "Login as a lecturer. Only users with role=lecturer can login via this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Job Provider",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}",
+									"if (jsonData._id) {",
+									"    pm.collectionVariables.set(\"userId\", jsonData._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"jobprovider@unistay.com\",\n    \"password\": \"password123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/login/jobprovider",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "login", "jobprovider"]
+						},
+						"description": "Login as a job provider. Only users with role=jobprovider can login via this endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Access Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set(\"accessToken\", jsonData.accessToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "refresh"]
+						},
+						"description": "Uses the HTTP-only refresh token cookie to generate a new access token. The new token is auto-saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "logout"]
+						},
+						"description": "Clears the refresh token cookie and logs the user out."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03. User Profile",
+			"description": "Private endpoints for authenticated users to manage their own profile.",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile"]
+						},
+						"description": "Returns full profile with role-specific fields and profile completion percentage."
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Name\",\n    \"age\": 23,\n    \"phonenumber\": \"0771234567\",\n    \"faculty\": \"Faculty of Engineering\",\n    \"academicYear\": \"4th Year\",\n    \"profileImage\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile"]
+						},
+						"description": "Update your own profile. Supports Base64 'profileImage'. Role-specific fields are only updated if your role matches."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Profile Image",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{ "key": "profileImage", "type": "file", "src": "" }
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/profile/image",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile", "image"]
+						},
+						"description": "Upload a profile image. Accepts: jpeg, jpg, png, gif, webp. Max file size: 5MB. Select a file in the 'src' field."
+					},
+					"response": []
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currentPassword\": \"password123\",\n    \"newPassword\": \"newPassword456\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/profile/password",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile", "password"]
+						},
+						"description": "Change your password. Requires current password for verification. New password must be at least 8 characters."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Completion %",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/profile/completion",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile", "completion"]
+						},
+						"description": "Returns profile completion percentage based on filled fields. Calculation is role-specific (students need university/faculty/etc, job providers need company info, etc)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04. Admin - User Management",
+			"description": "SuperAdmin-only endpoints for managing all users in the system.",
+			"item": [
+				{
+					"name": "Get All Users (Search/Filter/Paginate)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users?page=1&limit=10&search=&role=all&status=all&sortBy=createdAt&order=desc",
+							"host": ["{{baseUrl}}"],
+							"path": ["users"],
+							"query": [
+								{"key": "page", "value": "1", "description": "Page number (default: 1)"},
+								{"key": "limit", "value": "10", "description": "Items per page (default: 10)"},
+								{"key": "search", "value": "", "description": "Search by name, email, username, or NIC"},
+								{"key": "role", "value": "all", "description": "Filter: all, student, lecturer, jobprovider, superadmin"},
+								{"key": "status", "value": "all", "description": "Filter: all, pending, active, suspended, deactivated"},
+								{"key": "sortBy", "value": "createdAt", "description": "Sort field: createdAt, name, email, role"},
+								{"key": "order", "value": "desc", "description": "Sort order: asc or desc"}
+							]
+						},
+						"description": "SuperAdmin only. Returns paginated list of users with total count and pagination metadata."
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Create User",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin Created User\",\n    \"email\": \"admincreated@unistay.com\",\n    \"password\": \"password123\",\n    \"role\": \"student\",\n    \"university\": \"University of Moratuwa\",\n    \"address\": \"100 Test Lane\",\n    \"age\": 21,\n    \"nic\": \"200112345678\",\n    \"phonenumber\": \"0744444444\",\n    \"accountStatus\": \"active\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/admin/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "admin", "create"]
+						},
+						"description": "SuperAdmin manually creates a user. If password is omitted, defaults to 'TempPass123!'. Allowed roles: student, lecturer, jobprovider, superadmin."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User By Admin (Legacy)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated By Admin\",\n    \"role\": \"lecturer\",\n    \"accountStatus\": \"active\",\n    \"university\": \"University of Peradeniya\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "SuperAdmin can update any user's details including role, status, and all profile fields."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Profile By ID",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/profile/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile", "{{userId}}"]
+						},
+						"description": "Admin only. Returns user profile details by MongoDB ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Profile By ID",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin Corrected Name\",\n    \"email\": \"corrected@unistay.com\",\n    \"profileImage\": \"data:image/png;base64,...\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/profile/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "profile", "{{userId}}"]
+						},
+						"description": "Admin only. Update any user's core details and profile image using Base64."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Role",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"role\": \"lecturer\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/role",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}", "role"]
+						},
+						"description": "Change a user's role. Allowed values: superadmin, student, lecturer, jobprovider."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Account Status",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"suspended\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}", "status"]
+						},
+						"description": "Change account status. Allowed values: pending, active, suspended, deactivated. Cannot suspend/deactivate superadmin accounts."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Activity & Login History",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/activity",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}", "activity"]
+						},
+						"description": "View a user's login history (last 20 entries with IP/UserAgent), activity log (last 50 actions), and last login timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "Soft Delete User (Deactivate)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/soft",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}", "soft"]
+						},
+						"description": "Soft deletes user: sets isDeleted=true, deletedAt=now, accountStatus=deactivated. User is auto-excluded from queries but data remains in DB. Cannot soft-delete superadmins."
+					},
+					"response": []
+				},
+				{
+					"name": "Permanent Delete User",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"]
+						},
+						"description": "Permanently removes user from the database. This action CANNOT be undone. Cannot delete superadmins."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05. Data Export",
+			"description": "SuperAdmin-only endpoints for exporting user data for reporting.",
+			"item": [
+				{
+					"name": "Export Users as CSV",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/export/csv?role=all&status=all",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "export", "csv"],
+							"query": [
+								{"key": "role", "value": "all", "description": "Filter by role: all, student, lecturer, jobprovider, superadmin"},
+								{"key": "status", "value": "all", "description": "Filter by status: all, pending, active, suspended, deactivated"}
+							]
+						},
+						"description": "Downloads a CSV file with user data. Includes: ID, name, username, email, role, status, university, faculty, department, company, address, age, NIC, phone, last login, created date."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Users as Excel",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/export/excel?role=all&status=all",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "export", "excel"],
+							"query": [
+								{"key": "role", "value": "all", "description": "Filter by role: all, student, lecturer, jobprovider, superadmin"},
+								{"key": "status", "value": "all", "description": "Filter by status: all, pending, active, suspended, deactivated"}
+							]
+						},
+						"description": "Downloads an Excel (.xlsx) file with styled headers (blue background, white bold text). Same data columns as CSV export."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "06. RBAC Test Routes",
+			"description": "Test endpoints to verify role-based access control. Each endpoint is accessible only by the specified role.",
+			"item": [
+				{
+					"name": "Student Data (Student Only)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/student-data",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "student-data"]
+						},
+						"description": "Only accessible by users with role=student. Returns 403 for all other roles."
+					},
+					"response": []
+				},
+				{
+					"name": "Lecturer Data (Lecturer Only)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/lecturer-data",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "lecturer-data"]
+						},
+						"description": "Only accessible by users with role=lecturer. Returns 403 for all other roles."
+					},
+					"response": []
+				},
+				{
+					"name": "Job Provider Data (Job Provider Only)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/jobprovider-data",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "jobprovider-data"]
+						},
+						"description": "Only accessible by users with role=jobprovider. Returns 403 for all other roles."
+					},
+					"response": []
+				},
+				{
+					"name": "SuperAdmin Dashboard (SuperAdmin Only)",
+					"request": {
+						"auth": { "type": "bearer", "bearer": [{"key": "token", "value": "{{accessToken}}", "type": "string"}] },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/superadmin-dashboard",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "superadmin-dashboard"]
+						},
+						"description": "Only accessible by users with role=superadmin. Returns 403 for all other roles."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "07. Password Reset (OTP)",
+			"description": "Endpoints for the secure OTP-based password reset flow.",
+			"item": [
+				{
+					"name": "1. Request OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@unistay.com\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/forgot-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "forgot-password"]
+						},
+						"description": "Sends a 6-digit OTP to the user's email."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@unistay.com\",\n    \"otp\": \"123456\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "verify-otp"]
+						},
+						"description": "Validates the OTP entered by the user."
+					},
+					"response": []
+				},
+				{
+					"name": "3. Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@unistay.com\",\n    \"password\": \"newSecurePassword123\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "reset-password"]
+						},
+						"description": "Sets a new password for the user after successful OTP verification."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
