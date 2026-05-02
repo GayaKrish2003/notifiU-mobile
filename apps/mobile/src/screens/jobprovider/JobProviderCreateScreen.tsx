@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { createJobPost, BASE_URL } from "@notifiu/shared";
+import { createJobPost, DEFAULT_BASE_URL } from "@notifiu/shared";
 import { getToken } from "@notifiu/shared";
 import { ChevronDown, Calendar, Paperclip, X, FileText } from "lucide-react-native";
 import * as DocumentPicker from "expo-document-picker";
@@ -131,7 +131,7 @@ export default function JobProviderCreateScreen() {
       // Get token for auth header
       const token = await getToken();
 
-      await fetch(`${BASE_URL}/jobs`, {
+      await fetch(`${DEFAULT_BASE_URL}/jobs`, {
         method:  "POST",
         headers: {
           Authorization:  `Bearer ${token}`,
