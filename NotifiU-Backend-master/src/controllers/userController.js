@@ -1548,7 +1548,7 @@ const updateProfile = async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
             { name, email, profileImage },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
 
         if (!updatedUser) {

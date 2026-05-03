@@ -143,9 +143,12 @@ export const getTicketById = (id: string) => api.get(`/tickets/${id}`);
 export const createTicket = (data: FormData | Payload) => api.post("/tickets", data);
 export const updateTicket = (id: string, data: Payload) =>
   api.patch(`/tickets/${id}`, data);
-export const deleteTicket = (id: string) => api.delete(`/tickets/${id}`);
+export const deleteTicketAttachment = (ticketId: string, attachmentId: string) =>
+  api.delete(`/tickets/${ticketId}/attachments/${attachmentId}`);
 export const addTicketResponse = (id: string, message: string) =>
   api.post(`/tickets/${id}/responses`, { response_message: message });
+export const deleteTicket = (id: string) =>
+  api.delete(`/tickets/${id}`);
 
 // ─── Announcements ────────────────────────────────────────────
 export const getAnnouncements = (params?: Record<string, string>) =>

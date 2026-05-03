@@ -72,6 +72,25 @@ app.get('/', (req, res) => {
     res.send('NotifiU API is Running...');
 });
 
+// API Info Endpoint
+app.get('/api', (req, res) => {
+    res.json({
+        success: true,
+        message: 'NotifiU API is running',
+        version: '1.0.0',
+        endpoints: {
+            auth: '/api/auth',
+            users: '/api/users',
+            events: '/api/events',
+            jobs: '/api/jobs',
+            modules: '/api/modules',
+            announcements: '/api/announcements',
+            tickets: '/api/tickets',
+            chat: '/api/chat'
+        }
+    });
+});
+
 // 6. Error Handling (Must be after routes)
 app.use(notFound);
 app.use(errorHandler);

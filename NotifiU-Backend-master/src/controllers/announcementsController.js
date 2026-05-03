@@ -71,7 +71,7 @@ async function updateAnnouncement(req, res) {
         const updated = await Announcement.findByIdAndUpdate(
             req.params.id,
             { title, content, priority, status, expiry_date, module_id },
-            { new: true, runValidators: true }
+            { returnDocument: 'after', runValidators: true }
         );
         if (!updated) return res.status(404).json({ error: 'Announcement not found' });
         res.status(200).json(updated);

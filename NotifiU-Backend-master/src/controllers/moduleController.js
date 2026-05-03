@@ -171,7 +171,7 @@ exports.updateModule = async (req, res) => {
         semester: req.body.semester,
         academicYear: req.body.academicYear
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!module) {

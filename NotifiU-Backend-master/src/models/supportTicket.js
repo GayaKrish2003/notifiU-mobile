@@ -17,6 +17,9 @@ const attachmentSchema = new mongoose.Schema({
         type: Number,
         default: null,
     },
+    r2_key:{ 
+        type: String, 
+        default: null },
 });
 
 const supportTicketSchema = new mongoose.Schema(

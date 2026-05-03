@@ -156,7 +156,7 @@ exports.updateEvent = async (req, res) => {
             updateData.posterImageKey = posterImageKey;
         }
 
-        const updated = await Event.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        const updated = await Event.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
         res.status(400).json({ message: error.message });

@@ -374,7 +374,7 @@ const incrementViewCount = async (req, res) => {
         const jobPost = await JobPost.findByIdAndUpdate(
             req.params.id,
             { $inc: { viewCount: 1 } }, // $inc adds 1 to viewCount
-            { new: true }               // return the updated document
+            { returnDocument: 'after' }               // return the updated document
         );
 
         if (!jobPost) {
@@ -440,7 +440,7 @@ const approveJobPost = async (req, res) => {
                 status: 'approved',
                 rejectionReason: '', // clear any previous rejection reason
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!jobPost) {
@@ -485,7 +485,7 @@ const rejectJobPost = async (req, res) => {
                 status: 'rejected',
                 rejectionReason,
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (!jobPost) {

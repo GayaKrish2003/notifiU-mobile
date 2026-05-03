@@ -5,7 +5,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { getEventById, BASE_URL, getToken } from "@notifiu/shared";
+import { getEventById,DEFAULT_BASE_URL, getToken } from "@notifiu/shared";
 import type { Event } from "@notifiu/shared/src/types/auth";
 import { ChevronLeft, ChevronDown, Calendar, Clock, Image as ImageIcon, X } from "lucide-react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -186,7 +186,7 @@ export default function EditEventScreen() {
       }
 
       const token = await getToken();
-      await fetch(`${BASE_URL}/events/${eventId}`, {
+      await fetch(`${DEFAULT_BASE_URL}/events/${eventId}`, {
         method:  "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body:    formData,

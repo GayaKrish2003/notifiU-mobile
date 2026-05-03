@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Image,
@@ -16,7 +17,7 @@ import * as Sharing from "expo-sharing";
 import {
   sendChatMessage, getTickets, getTicketById,
   createTicket, updateTicket,
-  addTicketResponse, deleteTicketAttachment,
+  addTicketResponse,
   getServerURL, getToken,
 } from "@notifiu/shared";
 import type { ChatMessage } from "@notifiu/shared";
@@ -342,7 +343,7 @@ export default function FAQsScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       selectionLimit: remaining,
       quality: 0.8,
@@ -442,7 +443,7 @@ export default function FAQsScreen() {
   const handleDeleteExistingAttachment = (attachmentId: string) => {
     if (!selectedTicket) return;
     setDeletingAttachmentId(attachmentId);
-    deleteTicketAttachment(selectedTicket._id, attachmentId)
+    axios.delete(`https://notifiu.up.railway.app/api/tickets/${selectedTicket._id}/attachments/${attachmentId}`)
       .then(() => {
         setSelectedTicket((prev) =>
           prev

@@ -27,7 +27,7 @@ const startEventNotificationCron = () => {
 
                 // Find their push tokens
                 const users = await User.find({
-                    _id:       { $in: studentIds },
+                    studentId: { $in: studentIds },
                     pushToken: { $ne: null },
                 }).select('pushToken');
 
